@@ -10,7 +10,7 @@
     maxReverse: 95,
     accel: 300,           // px/s^2
     brake: 430,
-    turnRate: 3.5,        // rad/s at full steering authority
+    turnRate: 3.0,        // rad/s at full steering authority
     rollDrag: 0.7,        // 1/s, always-on velocity decay
     grip: 5.0,            // 1/s, how fast sideways slide is scrubbed off
     offRoadSpeed: 145,
@@ -197,11 +197,15 @@
 
       const into = car.vx * nx + car.vy * ny;
       if (into < 0) {
-        // Reflect the component heading into the obstacle and scrub speed.
-        car.vx -= nx * into * 1.4;
-        car.vy -= ny * into * 1.4;
-        car.vx *= 0.55;
-        car.vy *= 0.55;
+        // Split into "driving at it" and "sliding past it". Only the first is
+        // scrubbed; keeping most of the tangential speed lets a car glance off
+        // and slide clear instead of sticking to the obstacle it nudged.
+        const tx = -ny, ty = nx;
+        const along = car.vx * tx + car.vy * ty;
+        const bounce = -into * 0.35;
+        const slide = along * 0.85;
+        car.vx = nx * bounce + tx * slide;
+        car.vy = ny * bounce + ty * slide;
       }
     }
   }

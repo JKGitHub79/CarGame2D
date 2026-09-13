@@ -60,6 +60,14 @@ points. Rendering strokes that polyline; the on-track test, the AI's aim point
 and lap progress all project onto the same polyline. The asphalt you can see is
 exactly the asphalt the physics recognises.
 
+**The circuit auto-fits the road width.** `ROAD_HALF_WIDTH` in `js/track.js` is
+the one number that sets how wide the road is (currently 57, so a 114px road).
+Change it and `fitToCanvas()` rescales the control points so the painted road
+still clears the canvas edge by a margin. Without that, a wider road runs off
+screen *and* cars get stopped by the invisible arena wall while still on the
+tarmac. It only ever shrinks the circuit, so a narrow road is laid out exactly
+as authored.
+
 **Lap counting can't be cheated.** Each car's progress is the *accumulated*
 signed distance travelled along the centreline, not its current position. Going
 backwards subtracts. Driving across the infield to the start line gains
@@ -68,11 +76,18 @@ so every car must cover the same distance for a lap to count.
 
 **Grip is finite, and that's the whole game.** Velocity is decomposed against
 the car's heading *after* it rotates, so whatever is left pointing sideways is a
-slide, scrubbed off at the grip rate. Grip is tuned (5.0) so that holding
-the throttle flat through every corner is genuinely slower than lifting: a
-perfect line-follower that never lifts spends ~14% of the lap on the grass and
-laps around 9.6s, while the AI field laps in 8.2–8.7s. If you raise `grip` in
-`js/car.js`, flat-out becomes optimal and the driving stops mattering.
+slide, scrubbed off at the grip rate. `grip` (5.0) and `turnRate` (3.0) in
+`js/car.js` are tuned together so that holding the throttle flat through every
+corner is genuinely slower than lifting: a perfect line-follower that never
+lifts spends ~20% of the lap on the grass and laps around 9.1s, while the AI
+field laps in 7.7–8.2s while staying on the road. That 1.4s penalty is the
+game.
+
+`turnRate` is the sensitive one. It is deliberately low enough that at full
+speed the car cannot turn tightly enough to make the corners — understeer, in
+other words, which is what forces you to lift. Raise it (or widen the road
+without re-tuning it) and flat-out becomes the fastest way round, at which
+point the throttle is a hold-to-win button and steering stops mattering.
 
 **The AI is tuned against that physics, not hand-waved.** Opponents aim at a
 point down the road (further ahead the faster they go), read the upcoming
@@ -84,13 +99,24 @@ configuration that still stays under 3% off-track. Per-driver `skill` in
 
 **Trackside furniture is solid.** Tyre stacks are placed on the outside of the
 sharpest corners and trees in copses well back from the kerbs. Both collide —
-tyre stacks on their full footprint, trees only on the trunk. Nothing is placed
-within 40px of the racing surface, and every barrier has been verified
-escapable in reverse.
+tyre stacks on their full footprint, trees only on the trunk.
+
+Two rules keep solid objects from becoming traps. Nothing is placed within 46px
+of a canvas edge, because a gap narrower than a car turns run-off into a dead
+end against the arena wall. And the collision response splits velocity into
+"driving at it" and "sliding past it", scrubbing only the first, so cars glance
+off and slide clear instead of sticking to whatever they nudged. Every barrier
+is verified escapable from four impact angles.
 
 ## Verification
 
 The physics and AI were validated headlessly (a 90s four-car race: lap times,
-off-track share, NaN checks) and the full game in Chromium via Playwright:
-countdown, a complete three-lap race, restart, pause/resume, no console errors,
-a 75-second soak for stuck cars, and an escape test from all 28 tyre barriers.
+off-track share, NaN checks; plus a parameter sweep confirming flat-out is
+slower than lifting) and the full game in Chromium via Playwright: countdown, a
+complete three-lap race, restart, pause/resume, no console errors, a 75-second
+soak for stuck cars, and an escape test over every tyre barrier from four
+impact angles and three recovery inputs.
+
+Known cosmetic issue: the running-order panel overlaps drivable road for about
+3% of the lap at the bottom-left. The panels are translucent so a car there is
+dimmed rather than hidden.

@@ -154,8 +154,13 @@
     const n = track.count;
     const placed = [];
 
+    // A solid object closer to the canvas edge than this leaves a gap too
+    // narrow for a car to reverse through, turning run-off into a trap:
+    // car diameter (26) + the object's own radius, plus slack.
+    const EDGE_CLEAR = 46;
+
     function clearOfTrack(x, y, margin) {
-      return x > 14 && y > 14 && x < w - 14 && y < h - 14 &&
+      return x > EDGE_CLEAR && y > EDGE_CLEAR && x < w - EDGE_CLEAR && y < h - EDGE_CLEAR &&
         track.project(x, y, -1).distance > track.halfWidth + margin;
     }
 

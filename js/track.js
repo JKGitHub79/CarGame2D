@@ -12,8 +12,37 @@
     [900, 202], [906, 400], [764, 520], [520, 548], [300, 524], [140, 470]
   ];
 
-  const ROAD_HALF_WIDTH = 38;   // asphalt reaches this far either side of the centreline
+  const ROAD_HALF_WIDTH = 57;   // asphalt reaches this far either side of the centreline
   const SAMPLE_SPACING = 9;     // resampled centreline resolution, in pixels
+
+  const CANVAS_W = 1000;
+  const CANVAS_H = 620;
+  const EDGE_MARGIN = 34;       // grass to leave between the painted road and the canvas edge
+  const PAINT_REACH = 11;       // widest stroke drawn beyond the asphalt (the road shadow)
+
+  /* Scales the control points so the road — at whatever width is configured —
+   * still fits the canvas with a margin, then centres it. Without this a wider
+   * road runs off the edge, and cars get stopped by the arena wall while they
+   * are still on the tarmac. Only ever shrinks, so a narrow road keeps the
+   * circuit exactly as it was laid out. */
+  function fitToCanvas(points, halfWidth) {
+    const xs = points.map(function (p) { return p[0]; });
+    const ys = points.map(function (p) { return p[1]; });
+    const minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+    const minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+
+    const reach = halfWidth + PAINT_REACH + EDGE_MARGIN;
+    const availX = CANVAS_W - reach * 2;
+    const availY = CANVAS_H - reach * 2;
+    const scale = Math.min(availX / (maxX - minX), availY / (maxY - minY), 1);
+
+    const spanX = (maxX - minX) * scale, spanY = (maxY - minY) * scale;
+    const offX = (CANVAS_W - spanX) / 2, offY = (CANVAS_H - spanY) / 2;
+
+    return points.map(function (p) {
+      return [offX + (p[0] - minX) * scale, offY + (p[1] - minY) * scale];
+    });
+  }
 
   function catmullRom(p0, p1, p2, p3, t) {
     const t2 = t * t, t3 = t2 * t;
@@ -28,15 +57,16 @@
   }
 
   function build() {
-    const n = CONTROL.length;
+    const control = fitToCanvas(CONTROL, ROAD_HALF_WIDTH);
+    const n = control.length;
     const dense = [];
 
     // Dense spline sampling first; spacing here is uneven, so we resample below.
     for (let i = 0; i < n; i++) {
-      const p0 = CONTROL[(i - 1 + n) % n];
-      const p1 = CONTROL[i];
-      const p2 = CONTROL[(i + 1) % n];
-      const p3 = CONTROL[(i + 2) % n];
+      const p0 = control[(i - 1 + n) % n];
+      const p1 = control[i];
+      const p2 = control[(i + 1) % n];
+      const p3 = control[(i + 2) % n];
       for (let k = 0; k < 40; k++) dense.push(catmullRom(p0, p1, p2, p3, k / 40));
     }
     dense.push(dense[0].slice());
