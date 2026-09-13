@@ -16,6 +16,19 @@ xdg-open index.html      # or: open index.html  /  just double-click it
 The scripts are plain `<script>` tags rather than ES modules specifically so the
 game runs straight off the filesystem without tripping over CORS.
 
+### If you host it (GitHub Pages)
+
+Asset URLs carry a `?v=` cache buster (`js/game.js?v=2`). GitHub Pages serves
+files with a 10 minute max-age, so without it a browser keeps running the
+previous build after a deploy — and clearing the page cache does not help,
+because each `js/*.js` file is a separately cached URL. **Bump the number in
+`index.html` on every push that changes `css/` or `js/`** and a plain refresh
+picks up the new build immediately.
+
+The tags are static on purpose. Injecting scripts dynamically to version them
+risks executing `game.js` after `window.onload` has already fired, which would
+silently stop the game from ever starting.
+
 ## Controls
 
 | Key | Action |

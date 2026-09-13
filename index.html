@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Sprint Circuit &mdash; 2D Top-View Racer</title>
-<link rel="stylesheet" href="css/style.css">
+<!-- ?v= is a cache buster. GitHub Pages serves these files with a 10 minute
+     max-age, so without it a browser keeps running the previous build after a
+     deploy. Bump the number on every push that changes css/ or js/. -->
+<link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
   <div id="stage">
@@ -18,12 +21,12 @@
     </div>
   </div>
 
-  <script src="js/util.js"></script>
-  <script src="js/track.js"></script>
-  <script src="js/input.js"></script>
-  <script src="js/car.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/render.js"></script>
-  <script src="js/game.js"></script>
+  <script src="js/util.js?v=2"></script>
+  <script src="js/track.js?v=2"></script>
+  <script src="js/input.js?v=2"></script>
+  <script src="js/car.js?v=2"></script>
+  <script src="js/ai.js?v=2"></script>
+  <script src="js/render.js?v=2"></script>
+  <script src="js/game.js?v=2"></script>
 </body>
 </html>
